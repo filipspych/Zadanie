@@ -2,6 +2,7 @@ package com.example.zadanie_20481024;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityOptionsCompat;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -9,9 +10,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.animation.LayoutTransition;
 import android.annotation.SuppressLint;
+import android.app.ActivityOptions;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,6 +31,8 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
     private FirebaseAnalytics firebaseAnalytics;
     public static final String EXTRA_POST_ID = BuildConfig.APPLICATION_ID +".POST_ID";
+    public static final String EXTRA_POST_BODY = BuildConfig.APPLICATION_ID +".POST_BODY";
+    public static final String EXTRA_POST_TITLE = BuildConfig.APPLICATION_ID +".POST_TITLE";
 
     private ProgressBar progressBar;
     private TextView errorTextView;
@@ -42,10 +47,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
         //analityka
         firebaseAnalytics = FirebaseAnalytics.getInstance(this);
-
-        Bundle bundle = new Bundle();
         MainActivity.this.firebaseAnalytics.logEvent(FirebaseAnalytics.Event.APP_OPEN, null);
 
 
@@ -59,13 +63,12 @@ public class MainActivity extends AppCompatActivity {
         //pobieranie danych
         new LoadPostSummaries().execute();
 
+
         //animacje
         LayoutTransition layoutTransition = new LayoutTransition();
-        layoutTransition.setStagger(LayoutTransition.CHANGE_APPEARING, 2000);
-        layoutTransition.setStagger(LayoutTransition.CHANGE_DISAPPEARING, 2000);
-        layoutTransition.setStagger(LayoutTransition.CHANGING, 2000);
         layoutTransition.setDuration(2000);
         ((ViewGroup) findViewById(R.id.frameLayout)).setLayoutTransition(layoutTransition);
+
 
         //konfigurowanie recycler view
         recyclerView.setHasFixedSize(true);
@@ -122,13 +125,15 @@ public class MainActivity extends AppCompatActivity {
         class PostSummaryViewHolder extends RecyclerView.ViewHolder{
             private TextView title, body;
             private int id;
+            private int position;
+
             PostSummaryViewHolder(@NonNull final LinearLayout itemView) {
                 super(itemView);
                 title = itemView.findViewById(R.id.titleTextView);
                 body = itemView.findViewById(R.id.bodyTextView);
                 itemView.setOnClickListener(new View.OnClickListener() {
                     @Override
-                    public void onClick(View view) {
+                    public void onClick(final View view) {
                         //analityka
                         Bundle bundle = new Bundle();
                         bundle.putString(FirebaseAnalytics.Param.ITEM_ID, String.valueOf(id));
@@ -136,9 +141,22 @@ public class MainActivity extends AppCompatActivity {
                         bundle.putString(FirebaseAnalytics.Param.CONTENT_TYPE, "post");
                         MainActivity.this.firebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
 
-                        Intent intent = new Intent(view.getContext(), DetailsActivity.class);
+                        final Intent intent = new Intent(view.getContext(), DetailsActivity.class);
                         intent.putExtra(MainActivity.EXTRA_POST_ID, id);
-                        view.getContext().startActivity(intent);
+                        intent.putExtra(MainActivity.EXTRA_POST_TITLE, title.getText());
+                        intent.putExtra(MainActivity.EXTRA_POST_BODY, body.getText());
+                        recyclerView.smoothScrollToPosition(position);
+                        //animacje
+                        Pair<View, String> p1 = Pair.create((View)title, "trans_title");
+                        Pair<View, String> p2 = Pair.create((View)body, "trans_body");
+                        final ActivityOptions options = ActivityOptions.
+                                makeSceneTransitionAnimation(MainActivity.this, p1, p2);
+                        view.getHandler().postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                view.getContext().startActivity(intent, options.toBundle());
+                            }
+                        }, 250);
                     }
                 });
             }
@@ -152,6 +170,10 @@ public class MainActivity extends AppCompatActivity {
 
             void setId(int id){
                 this.id = id;
+            }
+
+            void setPosition(int position) {
+                this.position = position;
             }
         }
 
@@ -174,6 +196,7 @@ public class MainActivity extends AppCompatActivity {
             holder.setTitle(postSummary.getTitle());
             holder.setBody(postSummary.getBody());
             holder.setId(postSummary.getId());
+            holder.setPosition(position);
         }
 
         @Override

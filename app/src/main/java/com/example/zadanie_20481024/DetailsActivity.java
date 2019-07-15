@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
@@ -18,6 +19,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.analytics.FirebaseAnalytics;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class DetailsActivity extends AppCompatActivity {
     private FirebaseAnalytics firebaseAnalytics;
@@ -33,6 +37,11 @@ public class DetailsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_details);
 
+        //animacje
+        LayoutTransition layoutTransition = new LayoutTransition();
+        layoutTransition.setDuration(2000);
+        ((ViewGroup) findViewById(R.id.constraintLayout)).setLayoutTransition(layoutTransition);
+
         //analityka
         firebaseAnalytics = FirebaseAnalytics.getInstance(this);
 
@@ -43,13 +52,13 @@ public class DetailsActivity extends AppCompatActivity {
         errorTextView = findViewById(R.id.errorTextView);
         viewModel = ViewModelProviders.of(this).get(DetailActivityViewModel.class);
 
-        //animacje
-        LayoutTransition layoutTransition = new LayoutTransition();
-        layoutTransition.setDuration(2000);
-        ((ViewGroup) findViewById(R.id.constraintLayout)).setLayoutTransition(layoutTransition);
-
         //pobieranie danych i wypełnianie Views
         int postId = getIntent().getIntExtra(MainActivity.EXTRA_POST_ID, 0);
+        String postTitle = getIntent().getStringExtra(MainActivity.EXTRA_POST_TITLE);
+        String postBody = getIntent().getStringExtra(MainActivity.EXTRA_POST_BODY);
+
+        ((TextView)scrollView.findViewById(R.id.titleTextView)).setText(postTitle);
+        ((TextView)scrollView.findViewById(R.id.bodyTextView)).setText(postBody);
         new LoadFullPost().execute(postId);
 
         //konfiguracja views
@@ -83,31 +92,66 @@ public class DetailsActivity extends AppCompatActivity {
      */
     @SuppressLint("StaticFieldLeak")
     private class LoadFullPost extends AsyncTask<Integer, Void, Integer> {
+        int commentsLoaded = 0;
+        LinearLayout rootLinearLayout;
+        View commentsTitleView;
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            scrollView.setVisibility(View.GONE);
-            errorTextView.setVisibility(View.GONE);
-            progressBar.setVisibility(View.VISIBLE);
+            rootLinearLayout = scrollView.findViewById(R.id.commentsLinearLayout);
+            commentsTitleView = scrollView.findViewById(R.id.commentsTitleTextView);
         }
 
         @Override
         protected Integer doInBackground(Integer... integers) {
             fullPost = viewModel.getFullPost(integers[0]);
+            try {
+                Thread.sleep(500);
+                publishProgress(); //pokazujemy autora
+                Thread.sleep(500);
+                publishProgress(); //pokazujemy naglowek komentarzy
+                for(int i = 0; i < 3 && i < fullPost.getComments().size(); i++){
+                    Thread.sleep(500);
+                    publishProgress(); //pokazujemy po jednym komentarzu (ale tylko pierwsze 3)
+                }
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             if(fullPost != null)return 0; //poprawnie zakonczone dzialanie
             else return 1; //działanie zakonczone bledem
+        }
+
+        @Override
+        protected void onProgressUpdate(Void... values) {
+            super.onProgressUpdate(values);
+
+            if(authorTextView.getVisibility()==View.GONE){
+                authorTextView.setText("by " + fullPost.getAuthor());
+                authorTextView.setVisibility(View.VISIBLE);
+                ((FrameLayout) progressBar.getParent()).removeView(progressBar);
+            } else  if (commentsTitleView.getVisibility() == View.GONE) {
+                commentsTitleView.setVisibility(View.VISIBLE);
+            } else {
+                //for every comment I create a view, fill it with info and attach it to the linear layout inside the scroll view
+                LinearLayout commentLinearLayout = (LinearLayout) LayoutInflater.from(scrollView.getContext())
+                        .inflate(R.layout.view_comment, rootLinearLayout, false);
+                ((TextView) commentLinearLayout.findViewById(R.id.nameTextView)).setText(fullPost.getComments().get(commentsLoaded).getName());
+                ((TextView) commentLinearLayout.findViewById(R.id.emailTextView)).setText(fullPost.getComments().get(commentsLoaded).getEmail());
+                ((TextView) commentLinearLayout.findViewById(R.id.commentBodyTextView)).setText(fullPost.getComments().get(commentsLoaded).getBody());
+                rootLinearLayout.addView(commentLinearLayout);
+                commentsLoaded++;
+            }
         }
 
         @Override
         protected void onPostExecute(Integer integer) {
             super.onPostExecute(integer);
             if(integer == 0){
-                ((TextView)scrollView.findViewById(R.id.titleTextView)).setText(fullPost.getTitle());
-                authorTextView.setText("by " + fullPost.getAuthor());
-                ((TextView)scrollView.findViewById(R.id.bodyTextView)).setText(fullPost.getBody());
-                LinearLayout rootLinearLayout = scrollView.findViewById(R.id.commentsLinearLayout);
-                for(FullPost.Comment comment : fullPost.getComments()){
+                List<FullPost.Comment> tmp = new ArrayList<>(fullPost.getComments());
+                tmp.removeAll(fullPost.getComments().subList(0, commentsLoaded));
+                for(FullPost.Comment comment : tmp){
                     //for every comment I create a view, fill it with info and attach it to the linear layout inside the scroll view
                     LinearLayout commentLinearLayout = (LinearLayout) LayoutInflater.from(scrollView.getContext())
                             .inflate(R.layout.view_comment, rootLinearLayout, false);
@@ -115,13 +159,10 @@ public class DetailsActivity extends AppCompatActivity {
                     ((TextView) commentLinearLayout.findViewById(R.id.emailTextView)).setText(comment.getEmail());
                     ((TextView) commentLinearLayout.findViewById(R.id.commentBodyTextView)).setText(comment.getBody());
                     rootLinearLayout.addView(commentLinearLayout);
-
                 }
-                progressBar.setVisibility(View.GONE);
-                scrollView.setVisibility(View.VISIBLE);
             } else {
                 Toast.makeText(DetailsActivity.this, "Coś poszło nie tak. Przepraszamy.", Toast.LENGTH_SHORT).show();
-                progressBar.setVisibility(View.GONE);
+                ((FrameLayout) progressBar.getParent()).removeView(progressBar);
                 errorTextView.setVisibility(View.VISIBLE);
             }
         }

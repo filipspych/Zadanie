@@ -11,8 +11,9 @@
         android:id="@+id/titleTextView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="24sp"
-        android:textStyle="bold" />
+        android:textSize="30sp"
+        android:textStyle="bold"
+        android:transitionName="trans_title" />
 
     <TextView
         android:id="@+id/bodyTextView"
@@ -20,5 +21,6 @@
         android:layout_height="wrap_content"
         android:ellipsize="end"
         android:maxLines="2"
-        android:textSize="18sp" />
+        android:textSize="18sp"
+        android:transitionName="trans_body" />
 </LinearLayout>

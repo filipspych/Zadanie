@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_height="match_parent">
 
@@ -12,7 +13,7 @@
         android:paddingStart="4dp"
         android:paddingTop="4dp"
         android:paddingEnd="4dp"
-        android:text="TextView"
+        tools:text="TextView"
         android:textSize="18sp"
         android:textStyle="bold" />
 
@@ -24,7 +25,7 @@
         android:paddingStart="4dp"
         android:paddingEnd="4dp"
         android:paddingBottom="4dp"
-        android:text="TextView"
+        tools:text="TextView"
         android:textSize="18sp" />
 
     <TextView
@@ -36,7 +37,7 @@
         android:paddingTop="4dp"
         android:paddingEnd="4dp"
         android:paddingBottom="16dp"
-        android:text="TextView"
+        tools:text="TextView"
         android:textAlignment="textEnd"
         android:textSize="14sp"
         android:textStyle="italic" />
