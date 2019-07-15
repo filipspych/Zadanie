@@ -41,9 +41,9 @@
         android:fontFamily="sans-serif"
         android:foregroundGravity="center"
         android:gravity="center"
-        android:text="Coś poszło nie tak. Przepraszamy. Sprawdź swoje połączenie internetowe."
+        android:padding="30dp"
+        android:text="Coś poszło nie tak. Przepraszamy. Sprawdź swoje połączenie internetowe i zrestartuj aplikację."
         android:textAlignment="center"
-        android:textAllCaps="true"
         android:textColor="@color/colorAccent"
         android:textSize="16sp"
         android:visibility="gone" />

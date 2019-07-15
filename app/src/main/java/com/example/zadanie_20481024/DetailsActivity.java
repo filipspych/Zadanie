@@ -106,27 +106,28 @@ public class DetailsActivity extends AppCompatActivity {
         @Override
         protected Integer doInBackground(Integer... integers) {
             fullPost = viewModel.getFullPost(integers[0]);
-            try {
-                Thread.sleep(500);
-                publishProgress(); //pokazujemy autora
-                Thread.sleep(500);
-                publishProgress(); //pokazujemy naglowek komentarzy
-                for(int i = 0; i < 3 && i < fullPost.getComments().size(); i++){
+            if(fullPost != null){
+                try {
                     Thread.sleep(500);
-                    publishProgress(); //pokazujemy po jednym komentarzu (ale tylko pierwsze 3)
-                }
+                    publishProgress(); //pokazujemy autora
+                    Thread.sleep(500);
+                    publishProgress(); //pokazujemy naglowek komentarzy
+                    for(int i = 0; i < 3 && i < fullPost.getComments().size(); i++){
+                        Thread.sleep(500);
+                        publishProgress(); //pokazujemy po jednym komentarzu (ale tylko pierwsze 3)
+                    }
 
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            if(fullPost != null)return 0; //poprawnie zakonczone dzialanie
-            else return 1; //działanie zakonczone bledem
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                return 0; //poprawnie zakonczone dzialanie
+            } else return 1; //działanie zakonczone bledem
         }
 
         @Override
         protected void onProgressUpdate(Void... values) {
             super.onProgressUpdate(values);
-
+            if(fullPost==null) return;
             if(authorTextView.getVisibility()==View.GONE){
                 authorTextView.setText("by " + fullPost.getAuthor());
                 authorTextView.setVisibility(View.VISIBLE);
